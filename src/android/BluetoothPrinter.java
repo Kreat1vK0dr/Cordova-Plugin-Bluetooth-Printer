@@ -4,9 +4,14 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
+import java.nio.ByteBuffer;
+
 import java.util.Hashtable;
 import java.util.Set;
 import java.util.UUID;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
@@ -88,8 +93,35 @@ public class BluetoothPrinter extends CordovaPlugin {
 		}
         else if (action.equals("printPOSCommand")) {
 			try {
-				String msg = args.getString(0);
-                printPOSCommand(callbackContext, hexStringToBytes(msg));
+
+			        ByteBuffer bbuf = ByteBuffer.allocate(args.length() * 4);
+                    for (int i = 0; i < args.length(); i++) {
+
+                        Integer d = args.getInt(i);
+                        bbuf.putInt(d);
+
+                        System.out.println(d);
+                    }
+
+                    System.out.println(Arrays.toString(bbuf.array()));
+
+                    byte[] bytes = bbuf.array();
+
+                    byte[] buffer = new byte[args.length()];
+
+                    int j = 0;
+
+                    for (int i = 3; i < bytes.length; i += 4) {
+
+                        buffer[j] = bytes[i];
+
+                        j++;
+                    }
+
+                    System.out.println(Arrays.toString(buffer));
+
+
+            printPOSCommand(callbackContext, buffer);
 			} catch (IOException e) {
 				Log.e(LOG_TAG, e.getMessage());
 				e.printStackTrace();
@@ -132,6 +164,7 @@ public class BluetoothPrinter extends CordovaPlugin {
 			} else {
 				callbackContext.error("No Bluetooth Device Found");
 			}
+			Log.d(LOG_TAG, "Bluetooth Device Found: Log from JAVA");
 			//Log.d(LOG_TAG, "Bluetooth Device Found: " + mmDevice.getName());
 		} catch (Exception e) {
 			errMsg = e.getMessage();
@@ -311,7 +344,8 @@ public class BluetoothPrinter extends CordovaPlugin {
             mmOutputStream.write(buffer);
             // tell the user data were sent
 			Log.d(LOG_TAG, "Data Sent");
-            callbackContext.success("Data Sent");
+
+            callbackContext.success(Arrays.toString(buffer));
             return true;
         } catch (Exception e) {
             String errMsg = e.getMessage();
@@ -366,21 +400,6 @@ public class BluetoothPrinter extends CordovaPlugin {
     private static byte charToByte(char c) {
 		return (byte) "0123456789abcdef".indexOf(c);
 	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 	public byte[] getImage(Bitmap bitmap) {
@@ -473,8 +492,8 @@ public class BluetoothPrinter extends CordovaPlugin {
 			System.arraycopy(add, 0, nresult, result.length, add.length);
 
 			byte[] byteContent = new byte[(mWidth / 8 + 4)
-					* (mHeight + aHeight)];// 
-			byte[] bytehead = new byte[4];// 
+					* (mHeight + aHeight)];//
+			byte[] bytehead = new byte[4];//
 			bytehead[0] = (byte) 0x1f;
 			bytehead[1] = (byte) 0x10;
 			bytehead[2] = (byte) (mWidth / 8);
